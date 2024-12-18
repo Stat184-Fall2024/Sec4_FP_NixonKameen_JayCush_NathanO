@@ -1,0 +1,282 @@
+---
+title: "Untitled"
+format: pdf
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+# Load Required Libraries
+library(dplyr)
+library(readxl)
+library(esquisse)
+library(ggplot2)
+library(tidyr)
+library(scales)
+library(reshape2)
+library(corrplot)
+
+# Data Download and Preparation
+links <- list(
+  "2015" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2015%20NFL%20season.xltx",
+  "2016" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2016%20NFL%20season.xltx",
+  "2017" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2017%20NFL%20season.xltx",
+  "2018" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2018%20NFL%20season.xltx",
+  "2019" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2019%20NFL%20season.xltx",
+  "2020" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2020%20NFL%20season.xltx",
+  "2021" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2021%20NFL%20season.xltx",
+  "2022" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2022%20NFL%20season.xltx",
+  "2023" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2023%20NFL%20season.xltx",
+  "2024" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2024%20NFL%20season.xltx"
+)
+
+all_data <- lapply(names(links), function(year) {
+  temp_file <- tempfile(fileext = ".xlsx")
+  download.file(links[[year]], temp_file, mode = "wb")
+  read_excel(temp_file) %>%
+    mutate(Year = as.integer(year))
+}) %>%
+  bind_rows()
+
+# Define standard column names
+standard_columns <- c(
+  "Rank", "Team", "Games", "Points_Scored", "Yards", "Plays", "Yards_Per_Play",
+  "Turnovers", "Fumbles_Lost", "First_Downs", "Pass_Completions", "Pass_Attempts",
+  "Pass_Yards", "Pass_Touchdowns", "Pass_Interceptions", "Net_Yards_Per_Pass_Attempt",
+  "First_Downs_Passing", "Rush_Attempts", "Rush_Yards", "Rush_Touchdowns",
+  "Rush_Yards_Per_Attempt", "First_Downs_Rushing", "Penalties", "Penalties_In_Yards",
+  "First_Downs_By_Penalty", "%_Drives_Ending_In_Score", "%_Drives_Ending_In_Turnover",
+  "Expected_Points_Contributed", "Year"
+)
+
+colnames(all_data) <- standard_columns[1:ncol(all_data)]
+
+# Data Cleaning
+cleaned_data <- all_data %>%
+  filter(!is.na(Rank)) %>%
+  filter(!grepl("Avg|League|Total|Tm", Team)) %>%
+  mutate(across(!c("Team"), as.numeric)) %>%
+  mutate(
+    SuperBowl_Winner = case_when(
+      (Team == "Kansas City Chiefs" & Year == 2024) ~ TRUE,
+      (Team == "Kansas City Chiefs" & Year == 2023) ~ TRUE,
+      (Team == "Los Angeles Rams" & Year == 2022) ~ TRUE,
+      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ TRUE,
+      (Team == "Kansas City Chiefs" & Year == 2020) ~ TRUE,
+      (Team == "New England Patriots" & Year == 2019) ~ TRUE,
+      (Team == "Philadelphia Eagles" & Year == 2018) ~ TRUE,
+      (Team == "New England Patriots" & Year == 2017) ~ TRUE,
+      (Team == "Denver Broncos" & Year == 2016) ~ TRUE,
+      (Team == "New England Patriots" & Year == 2015) ~ TRUE,
+      TRUE ~ FALSE
+    )
+  )
+
+# Ranking Within Each Year (Optional)
+ranked_data <- cleaned_data %>%
+  group_by(Year) %>%
+  mutate(across(where(is.numeric), ~ rank(-., ties.method = "min"))) %>%
+  ungroup() %>%
+  select(-Games, -Rank)
+```
+
+This code loads the necessary data
+
+```{r}
+# Basic summary statistics of numeric columns
+overall_summary <- cleaned_data %>%
+  select(where(is.numeric)) %>%
+  summary()
+
+overall_summary
+
+```
+
+**Explanation:**\
+The summary statistics provide a broad overview of all the numeric variables in the dataset. This helps us understand the range, mean, and variability of key metrics like Points_Scored, Yards, Turnovers, and so forth.
+
+## Comparing Super Bowl Winners vs Non-Winners
+
+### Distribution of Points Scored
+
+```{r}
+ggplot(cleaned_data, aes(x = Points_Scored, fill = factor(SuperBowl_Winner))) + geom_histogram(position = "identity", alpha = 0.6, bins = 30) + scale_fill_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), labels = c("Non-Winner", "Winner")) + labs(title = "Distribution of Points Scored", subtitle = "Super Bowl Winners vs. Non-Winners", x = "Points Scored", y = "Count") + theme_minimal()
+```
+
+**Explanation:**\
+This histogram compares the distribution of total points scored by teams that won the Super Bowl versus those that did not. A higher concentration of winners on the right side indicates winners generally score more points.
+
+**Distribution of Total Yards**
+
+```{r}
+ggplot(cleaned_data, aes(x = factor(SuperBowl_Winner), y = Yards, fill = factor(SuperBowl_Winner))) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), 
+                    labels = c("Non-Winner", "Winner")) +
+  labs(title = "Distribution of Total Yards",
+       x = "",
+       y = "Yards") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+**Explanation:**\
+This boxplot shows the distribution of total yards gained by teams each season, separating winners and non-winners. If the box for winners is higher, it suggests that winners tend to rack up more yards, indicating a potent offense.
+
+## Yearly Trends
+
+### Points Over Time
+
+```{r}
+yearly_stats <- cleaned_data %>%
+  group_by(Year, SuperBowl_Winner) %>%
+  summarise(avg_points = mean(Points_Scored, na.rm = TRUE), .groups = "drop")
+
+ggplot(yearly_stats, aes(x = Year, y = avg_points, color = factor(SuperBowl_Winner))) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), 
+                     labels = c("Non-Winners", "Winners")) +
+  scale_x_continuous(breaks = yearly_stats$Year) +
+  labs(title = "Average Points Scored Over Time",
+       subtitle = "Super Bowl Winners vs. Non-Winners",
+       x = "Year",
+       y = "Average Points") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+```
+
+**Explanation:**\
+This line plot shows how the average points scored by both winners and non-winners evolve from year to year. If winners consistently outscore non-winners, it might suggest that offensive strength is an ongoing key to championship success.
+
+### Yards Over Time
+
+```{r}
+yearly_stats <- cleaned_data %>%
+  group_by(Year, SuperBowl_Winner) %>%
+  summarise(avg_yards = mean(Yards, na.rm = TRUE), .groups = "drop")
+
+ggplot(yearly_stats, aes(x = Year, y = avg_yards, color = factor(SuperBowl_Winner))) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"),
+                     labels = c("Non-Winners", "Winners")) +
+  scale_x_continuous(breaks = yearly_stats$Year) +
+  labs(title = "Average Yards Over Time",
+       subtitle = "Super Bowl Winners vs. Non-Winners",
+       x = "Year",
+       y = "Average Yards") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+```
+
+**Explanation:**\
+Similar to points, this plot shows whether yardage gained by teams has changed over time and how winners compare with the rest of the league. Consistently higher yardage totals might be associated with winning outcomes.
+
+## Focusing on Winners Only
+
+```{r}
+winners_over_time <- cleaned_data %>%
+  filter(SuperBowl_Winner == 1) %>%
+  group_by(Year) %>%
+  summarise(
+    median_points = median(Points_Scored, na.rm = TRUE),
+    median_yards = median(Yards, na.rm = TRUE),
+    median_turnovers = median(Turnovers, na.rm = TRUE),
+    median_pass_tds = median(Pass_Touchdowns, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+winners_long <- winners_over_time %>%
+  pivot_longer(cols = c("median_points", "median_yards", "median_turnovers", "median_pass_tds"), 
+               names_to = "Statistic",
+               values_to = "Value") %>%
+  mutate(Statistic = recode(Statistic, 
+                            "median_points" = "Points",
+                            "median_yards" = "Yards",
+                            "median_turnovers" = "Turnovers",
+                            "median_pass_tds" = "Pass Touchdowns"))
+
+ggplot(winners_long, aes(x = Year, y = Value)) +
+  geom_line(color = "darkgoldenrod2", size = 1.2) +
+  geom_point(color = "darkgoldenrod2") +
+  facet_wrap(~Statistic, scales = "free_y") +
+  scale_x_continuous(breaks = winners_long$Year) +
+  labs(title = "Key Performance Metrics for Super Bowl Winners Over Time",
+       x = "Year", 
+       y = "Value") +
+  theme_minimal()
+
+```
+
+**Explanation:**\
+By isolating Super Bowl winners, we can study how their key performance metrics have shifted over time. By examining points, yards, turnovers, and passing touchdowns, we can see if dominant trends emerge—such as consistently high offensive production or low turnovers among champions.
+
+## Correlation Analysis
+
+### Overall Correlations
+
+```{r}
+# Convert SuperBowl_Winner to numeric if not already done
+cleaned_data <- cleaned_data %>%
+  mutate(SuperBowl_Winner = as.numeric(SuperBowl_Winner))
+
+numeric_data <- cleaned_data %>%
+  select(where(is.numeric))
+
+corr_matrix <- cor(numeric_data, use = "complete.obs", method = "pearson")
+
+# Correlation Heatmap
+melted_corr <- melt(corr_matrix)
+ggplot(melted_corr, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, 
+                       name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Correlation Heatmap Including SuperBowl_Winner")
+```
+
+**Explanation:**\
+This correlation plot shows how all the numeric statistics interrelate. Highly positive correlations (red) indicate pairs of metrics that increase together, while highly negative correlations (blue) suggest a trade-off between two metrics. Understanding these relationships can highlight which factors are commonly aligned with winning.
+
+### Correlations Involving Super Bowl Winners
+
+```{r}
+melted_corr <- melt(corr_matrix)
+
+sbw_correlations <- melted_corr %>%
+  filter(Var1 == "SuperBowl_Winner" | Var2 == "SuperBowl_Winner") %>%
+  filter(Var1 != Var2) %>%
+  arrange(desc(abs(value)))
+
+head(sbw_correlations, 10)
+
+```
+
+**Explanation:**\
+This table shows which metrics correlate most strongly (positively or negatively) with being a Super Bowl winner. Stats with high positive correlation values suggest that as those stats increase, the likelihood of winning a Super Bowl increases. Conversely, strongly negative correlations would imply that increasing that stat reduces the likelihood of winning.
