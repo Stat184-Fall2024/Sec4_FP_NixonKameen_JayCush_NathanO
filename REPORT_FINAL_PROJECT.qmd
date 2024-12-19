@@ -5,50 +5,6 @@ format: pdf
 editor: visual
 ---
 
-# What Needs to be Covered:
-
-1.  State and explain the research questions
-    -   What are the different trends between the past 10 Super Bowl winners?
-
-    -   From these trends, what team in the 2024-25 season is best to win the Super Bowl?
-2.  Where did we get the data, who collected the data, for what purpose?
-    -   Nixon retrieved and tidied the data from pro-football-reference.com of every team in the past 10 NFL seasons.
-
-    -   The purpose was to retrieve the different rankings of every individual team in their respected seasons to eventually see if there are different trends within each Super Bowl winner.
-
-        -   We would then gather data from the 2024 NFL season currently to find each team's rankings, compare them to the trends we found with the Super Bowl winners in the past, and make an estimated guess on who will win the Super Bowl in the 2024-25 season.
-3.  What makes up a case in our data?
-    -   There are different wrangled data sets with different cases.
-
-        -   The wrangled data first had each case representing one of 32 NFL teams in a season (ex. the Dallas Cowboys in 2023 or the Arizona Cardinals in 2019) to help determine the different rankings between each team with one another in that season.
-
-        -   The case list was then shortened to only the different Super Bowl Winners of the past 10 years with their offensive statistics rankings in that year.
-
-        -   We also had to create another data set that had each individual team in the 2024-25 season and their rankings in it to help with our prediction of this year's winner
-
-        -   IF WE COMBINE THE DATA SETS, we would then have each case represent either a Super Bowl winner of the past 10 years, or a team in the 2024-25 season.
-4.  How does the data meet the FAIR and/or CARE principles? NOT DONE
-    -   FAIR Principles:
-
-        -   Findable:
-5.   What attributes are focused on in the analysis?
-    -   Broad overview of all numeric variables in the dataset
-
-    -   Correlation Plot: Shows the strength and direction of the correlation between each numeric variable. Red indicates positive, blue negative, and the darker the color, the stronger the correlation
-
-    -   Histogram: Distribution of total points scored by teams that won the Super Bowl vs those that didn't
-
-        -   A higher concentration of winners on the right indicates that winners generally score more points
-
-    -   Boxplot: Distribution of total yards gained by each team each season. Higher box indicates that that offense tended to rack up more yards
-
-    -   Line Plot: Shows the distribution of average points scored by winners and non winners
-
-    -   Plot that shows yardage gained by teams has changed over time. Consistently, higher yardage totals might be associated with winning outcomes
-
-    -   We then isolate the Super Bowl Winners in their key performance metrics over time. (Points, yards, turnovers, and passing touchdowns) sees if there's a dominant trend that emerges
-6.  Bring in data visualizations:
-
 # [The Qualities of a Super Bowl-Winning Team]{.underline}
 
 ### Nixon Kameen, Jay Cush, Nathan O
@@ -235,6 +191,58 @@ ggplot(winners_long, aes(x = Year, y = Value)) +
 From these four graphs, we were able to find a lot of inconsistency between each winner, which resulted in no definite trends to exist. This can also be supported by the correlation coefficients above, which indicated weak correlations between these variables and winning the Super Bowl.
 
 From our findings so far, we were able to discover that the winning team most likely had to have above 5500 total yards of offense and above 350 total points on the year. We also have to reiterate that these trends aren't 100% with all the Super Bowl winners; there are always outliers.
+
+As the 2024 NFL regular season nears its conclusion, the playoff picture is coming into focus, showing intense debates about potential Super Bowl contenders. We will quickly dive into the standout performances of the season.
+
+```{r}
+# Filter data for the 2024 season
+teams_2024 <- cleaned_data %>%
+  filter(Year == 2024) %>%
+  group_by(Team) %>%
+  summarise(
+    Avg_Yards = mean(Yards, na.rm = TRUE),
+    Avg_Points = mean(Points_Scored, na.rm = TRUE)
+  )
+
+# Create scatter plot with unique colors for each team
+# Create bar chart
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Yards), y = Avg_Yards, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() + # Optional: Use a visually appealing color palette
+  labs(
+    title = "Average Yards for NFL Teams (2024)",
+    x = "Team",
+    y = "Average Yards"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10), # Rotate team names for readability
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+# Create horizontal bar chart 
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Points), y = Avg_Points, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Average Points for NFL Teams (2024)",
+    x = "Average Points",
+    y = "Team"
+  ) +
+  theme_minimal() +
+  coord_flip() + # Flips the axes
+  theme(
+    axis.text.y = element_text(size = 10, margin = margin(r = 10), lineheight = 1.2), # Adjust text size, margin, and spacing
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+```
+
+The Detroit Lions have emerged as formidable contenders, leading the league in points scored, showcasing their strong offense. Meanwhile, the Baltimore Ravens have dominated in total yards gained, reflecting their ability to move the ball consistently throughout the season.
+
+When we analyze the data and compare it with the current NFL landscape and past Super Bowl winners, all signs point to the Ravens as the team most poised to claim the title. Their high-powered offense and consistent performance make them the strongest candidates to bring home the championship.
 
 ## [Discussion]{.underline}
 
