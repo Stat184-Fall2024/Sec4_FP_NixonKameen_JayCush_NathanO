@@ -301,6 +301,7 @@ ggplot(melted_corr, aes(Var1, Var2, fill = value)) +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(title = "Correlation Heatmap Including SuperBowl_Winner")
+
 ```
 
 **Explanation:**\
@@ -309,16 +310,67 @@ This correlation plot shows how all the numeric statistics interrelate. Highly p
 ### Correlations Involving Super Bowl Winners
 
 ```{r}
-melted_corr <- melt(corr_matrix)
-
-sbw_correlations <- melted_corr %>%
-  filter(Var1 == "SuperBowl_Winner" | Var2 == "SuperBowl_Winner") %>%
-  filter(Var1 != Var2) %>%
-  arrange(desc(abs(value)))
-
-head(sbw_correlations, 10)
+correlationMat <- cor(cleaned_data[, sapply(cleaned_data, is.numeric)], use = "complete.obs")
+correlation_with_SB_Winner <- correlationMat["SuperBowl_Winner", ]
+correlation_with_SB_Winner <- sort(correlation_with_SB_Winner, decreasing = TRUE)
+print(correlation_with_SB_Winner)
 
 ```
 
 **Explanation:**\
 This table shows which metrics correlate most strongly (positively or negatively) with being a Super Bowl winner. Stats with high positive correlation values suggest that as those stats increase, the likelihood of winning a Super Bowl increases. Conversely, strongly negative correlations would imply that increasing that stat reduces the likelihood of winning.
+
+
+
+```{r}
+# Filter data for the 2024 season
+teams_2024 <- cleaned_data %>%
+  filter(Year == 2024) %>%
+  group_by(Team) %>%
+  summarise(
+    Avg_Yards = mean(Yards, na.rm = TRUE),
+    Avg_Points = mean(Points_Scored, na.rm = TRUE)
+  )
+
+# Create scatter plot with unique colors for each team
+# Create bar chart
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Yards), y = Avg_Yards, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() + # Optional: Use a visually appealing color palette
+  labs(
+    title = "Average Yards for NFL Teams (2024)",
+    x = "Team",
+    y = "Average Yards"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10), # Rotate team names for readability
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+```
+**Explanation:**\
+
+This bar chart illustrates the average yards gained by each NFL team during the 2024 season. It allows for a quick and easy comparison of offensive performance (in terms of average yards) across all teams in the league. The variance of these 2024 teams show a pretty even amount of average yards with the Ravens with about 6000 yards(high) and Chicago Bears with about 4000 yards (low).
+```{r}
+# Create horizontal bar chart 
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Points), y = Avg_Points, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Average Points for NFL Teams (2024)",
+    x = "Average Points",
+    y = "Team"
+  ) +
+  theme_minimal() +
+  coord_flip() + # Flips the axes
+  theme(
+    axis.text.y = element_text(size = 10, margin = margin(r = 10), lineheight = 1.2), # Adjust text size, margin, and spacing
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+```
+**Explanation:**\
+This horizontal bar chart illustrates the average points gained by each NFL team during the 2024 season. It allows for a quick and easy comparison of offensive performance (in terms of average points) across all teams in the league. The variance of these 2024 teams show a changing amount of average points with the Detroit lions with about 450 points(high) and Chicago New York Giants with about 210 Points (low).
