@@ -1,0 +1,76 @@
+---
+title: "STAT184 Final: NFL Team Rankings"
+author: "Jay Cush, Nixon Kameen, Nathan O"
+format: pdf
+editor: visual
+---
+
+# What Needs to be Covered:
+
+1.  State and explain the research questions
+    -   What are the different trends between the past 10 Super Bowl winners?
+
+    -   From these trends, what team in the 2024-25 season is best to win the Super Bowl?
+2.  Where did we get the data, who collected the data, for what purpose?
+    -   Nixon retrieved and tidied the data from pro-football-reference.com of every team in the past 10 NFL seasons.
+
+    -   The purpose was to retrieve the different rankings of every individual team in their respected seasons to eventually see if there are different trends within each Super Bowl winner.
+
+        -   We would then gather data from the 2024 NFL season currently to find each team's rankings, compare them to the trends we found with the Super Bowl winners in the past, and make an estimated guess on who will win the Super Bowl in the 2024-25 season.
+3.  What makes up a case in our data?
+    -   There are different wrangled data sets with different cases.
+
+        -   The wrangled data first had each case representing one of 32 NFL teams in a season (ex. the Dallas Cowboys in 2023 or the Arizona Cardinals in 2019) to help determine the different rankings between each team with one another in that season.
+
+        -   The case list was then shortened to only the different Super Bowl Winners of the past 10 years with their offensive statistics rankings in that year.
+
+        -   We also had to create another data set that had each individual team in the 2024-25 season and their rankings in it to help with our prediction of this year's winner
+
+        -   IF WE COMBINE THE DATA SETS, we would then have each case represent either a Super Bowl winner of the past 10 years, or a team in the 2024-25 season.
+4.  How does the data meet the FAIR and/or CARE principles? NOT DONE
+    -   FAIR Principles:
+
+        -   Findable:
+5.   What attributes are focused on in the analysis?
+    -   Broad overview of all numeric variables in the dataset
+
+    -   Correlation Plot: Shows the strength and direction of the correlation between each numeric variable. Red indicates positive, blue negative, and the darker the color, the stronger the correlation
+
+    -   Histogram: Distribution of total points scored by teams that won the Super Bowl vs those that didn't
+
+        -   A higher concentration of winners on the right indicates that winners generally score more points
+
+    -   Boxplot: Distribution of total yards gained by each team each season. Higher box indicates that that offense tended to rack up more yards
+
+    -   Line Plot: Shows the distribution of average points scored by winners and non winners
+
+    -   Plot that shows yardage gained by teams has changed over time. Consistently, higher yardage totals might be associated with winning outcomes
+
+    -   We then isolate the Super Bowl Winners in their key performance metrics over time. (Points, yards, turnovers, and passing touchdowns) sees if there's a dominant trend that emerges
+6.  Bring in data visualizations:
+
+![](images/clipboard-3347954983.png){width="772" height="202"}
+
+1.  The report should be a narrative text (explains context and helps the reader on what's going on)
+
+# [The Qualities of a Super Bowl-Winning Team]{.underline}
+
+### Nixon Kameen, Jay Cush, Nathan O
+
+Since 1967, with the merger of the National Football League (NFL), and the American Football League (AFL), the Super Bowl has become a major event in the United States, and for the sports industry as a whole. It marks finale of the NFL season between the best teams from each division: the American Football Conference (AFC), and the National Football Conference (NFC). Since the 60's, it has been every NFL team's top priority to win the championship game, and hold up the Lombardi Trophy, but how are they able to achieve this incredibly difficult task?
+
+In this report, we are investigating two questions: a.) What trends are apparent between the offenses of the past 8 Super Bowl winners? b.) If there are consistent trends from our data, can we accurately predict the future and find the next Super Bowl winner for the 2024-25 NFL season? We will first state some relevant background information, followed by our strategy to tackle these questions. After that, we will state our findings and end with our closing remarks and statements.
+
+## [Background Information]{.underline}
+
+Over the years, predicting the Super Bowl has been a mix of statistics and fun. There have been many different cases throughout the years on how people predicted the Super Bowl. Some prediction methods that aren't considered mainstream have gained a lot of attention and even a bit of fame for being entertaining and (sometimes) outrageous. Animals like Paul the Octopus and Fiona the Hippo have famously picked Super Bowl winners by choosing between food options or team-branded items. Some fans have also enlisted astrology in their divination, consulting horoscopes or using celestial alignments to help divine a winner.
+
+On the more conventional side, sports analysts depend on traditional data and expert wisdom to forecast who will win the Super Bowl. Their predictions are grounded in types of analysis that many of us might recognize from school or the office. They look at all kinds of factors—some we might expect and others we might not, such as injuries. They also use all kinds of scientific strategies to come up with numbers that mean something (or not) in predicting the game's outcome. In fact, some would say that the Super Bowl may well be the most rigorously analyzed sporting event of the year, not just because of the large amount of money bet on it but also because of its considerable cultural cachet.
+
+## [Methodology]{.underline}
+
+We had two different tasks to accomplish: 1.) Finding the trends between the Super Bowl-winning teams' offense and 2.) Comparing those trends with the teams in the current NFL season to predict who will win it. For this experiment, Nixon was able to gather the offensive statistics of every team from each season from 2015-2023, respectfully, from "pro-football-reference.com". It's good to keep in mind that all of these data sets have the same named variables. But if we want to see which teams performed better in each individual statistic, we also need to find the correlation between winning the Super Bowl and each variable. Basically, we need to know if have more or less of the variable is a good statistic for winning.
+
+After finding the correlation of each variable and winning the Super Bowl, we made a new data set that converted all the numeric values into rankings between each team for every variable in the season, and then combined all the seasons together to find different trends in the teams.
+
+Next, we went through different offensive categories and found the average
