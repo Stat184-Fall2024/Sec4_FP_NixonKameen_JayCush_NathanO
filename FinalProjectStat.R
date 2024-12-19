@@ -22,6 +22,7 @@ links <- list(
   "2024" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2024%20NFL%20season.xltx"
 )
 
+# Read all data and combine
 all_data <- lapply(names(links), function(year) {
   temp_file <- tempfile(fileext = ".xlsx")
   download.file(links[[year]], temp_file, mode = "wb")
@@ -41,6 +42,7 @@ standard_columns <- c(
   "Expected_Points_Contributed", "Year"
 )
 
+# Rename columns to standard
 colnames(all_data) <- standard_columns[1:ncol(all_data)]
 
 # Data Cleaning
@@ -50,95 +52,121 @@ cleaned_data <- all_data %>%
   mutate(across(!c("Team"), as.numeric)) %>%
   mutate(
     SuperBowl_Winner = case_when(
-      (Team == "Kansas City Chiefs" & Year == 2024) ~ TRUE,
-      (Team == "Kansas City Chiefs" & Year == 2023) ~ TRUE,
-      (Team == "Los Angeles Rams" & Year == 2022) ~ TRUE,
-      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ TRUE,
-      (Team == "Kansas City Chiefs" & Year == 2020) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2019) ~ TRUE,
-      (Team == "Philadelphia Eagles" & Year == 2018) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2017) ~ TRUE,
-      (Team == "Denver Broncos" & Year == 2016) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2015) ~ TRUE,
-      TRUE ~ FALSE
+      (Team == "Kansas City Chiefs" & Year == 2024) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2023) ~ 1,
+      (Team == "Los Angeles Rams" & Year == 2022) ~ 1,
+      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2020) ~ 1,
+      (Team == "New England Patriots" & Year == 2019) ~ 1,
+      (Team == "Philadelphia Eagles" & Year == 2018) ~ 1,
+      (Team == "New England Patriots" & Year == 2017) ~ 1,
+      (Team == "Denver Broncos" & Year == 2016) ~ 1,
+      (Team == "New England Patriots" & Year == 2015) ~ 1,
+      TRUE ~ 0
     )
   )
 
-# Ranking Within Each Year (Optional)
+# Ranking Within Each Year
 ranked_data <- cleaned_data %>%
   group_by(Year) %>%
-  mutate(across(where(is.numeric), ~ rank(-., ties.method = "min"))) %>%
+  mutate(across(
+    where(is.numeric) & !c(SuperBowl_Winner), # Exclude SuperBowl_Winner
+    ~ rank(-., ties.method = "min")
+  )) %>%
   ungroup() %>%
-  select(-Games, -Rank)
+  select(-Games, -Rank) 
 
-# Basic Statistical Analysis
+# Basic summary statistics of numeric columns
 overall_summary <- cleaned_data %>%
   select(where(is.numeric)) %>%
   summary()
 
-print(overall_summary)
+overall_summary
 
-grouped_summary <- cleaned_data %>%
-  group_by(SuperBowl_Winner) %>%
-  summarise(across(where(is.numeric),
-                   list(mean = mean, sd = sd, median = median, min = min, max = max),
-                   na.rm = TRUE), .groups = "drop")
 
-# Visualizations: Distribution of Key Stats
-ggplot(cleaned_data, aes(x = Points_Scored, fill = SuperBowl_Winner)) +
-  geom_histogram(position = "identity", alpha = 0.6, bins = 30) +
-  scale_fill_manual(values = c("FALSE" = "grey70", "TRUE" = "darkgoldenrod2")) +
-  labs(title = "Distribution of Points Scored",
-       subtitle = "Super Bowl Winners vs. Non-Winners",
-       x = "Points Scored", y = "Count") +
-  theme_minimal()
-
-ggplot(cleaned_data, aes(x = SuperBowl_Winner, y = Yards, fill = SuperBowl_Winner)) +
-  geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("FALSE" = "grey70", "TRUE" = "darkgoldenrod2")) +
-  labs(title = "Distribution of Total Yards", x = "", y = "Yards") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-# Yearly Trends
-yearly_stats <- cleaned_data %>%
-  group_by(Year, SuperBowl_Winner) %>%
+# Create a column to indicate if a team has ever won a Super Bowl
+aggregated_data <- cleaned_data %>%
+  group_by(Team) %>%
   summarise(
-    avg_points = mean(Points_Scored, na.rm = TRUE),
-    avg_yards = mean(Yards, na.rm = TRUE),
-    avg_turnovers = mean(Turnovers, na.rm = TRUE),
-    avg_yards_per_play = mean(Yards_Per_Play, na.rm = TRUE),
+    Total_Points_Scored = sum(Points_Scored, na.rm = TRUE),
+    Ever_SuperBowl_Winner = ifelse(any(SuperBowl_Winner == "1"), "Winner", "Non-Winner"),
     .groups = "drop"
   )
 
-ggplot(yearly_stats, aes(x = Year, y = avg_points, color = SuperBowl_Winner)) +
+# Plot with the updated column
+ggplot(aggregated_data, aes(x = reorder(Team, Total_Points_Scored), y = Total_Points_Scored, fill = Ever_SuperBowl_Winner)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  scale_fill_manual(
+    values = c("Non-Winner" = "grey70", "Winner" = "darkgoldenrod2")
+  ) +
+  labs(
+    title = "Total Points Scored by Team",
+    subtitle = "Super Bowl Winners vs. Non-Winners",
+    x = "Team",
+    y = "Total Points Scored",
+    fill = "Super Bowl Status"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(cleaned_data, aes(x = factor(SuperBowl_Winner), y = Yards, fill = factor(SuperBowl_Winner))) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(
+    values = c("0" = "grey70", "1" = "darkgoldenrod2"),
+    labels = c("Non-Winner", "Winner")
+  ) +
+  scale_x_discrete(
+    labels = c("0" = "Non-Winner", "1" = "Winner")
+  ) +
+  labs(
+    title = "Distribution of Total Yards",
+    x = "",
+    y = "Yards"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+yearly_stats <- cleaned_data %>%
+  group_by(Year, SuperBowl_Winner) %>%
+  summarise(avg_points = mean(Points_Scored, na.rm = TRUE), .groups = "drop")
+
+ggplot(yearly_stats, aes(x = Year, y = avg_points, color = factor(SuperBowl_Winner))) +
   geom_line(size = 1.2) +
   geom_point() +
-  scale_color_manual(values = c("FALSE" = "grey70", "TRUE" = "darkgoldenrod2"),
-                     labels = c("Non-Winners", "Super Bowl Winners")) +
+  scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), 
+                     labels = c("Non-Winners", "Winners")) +
   scale_x_continuous(breaks = yearly_stats$Year) +
   labs(title = "Average Points Scored Over Time",
        subtitle = "Super Bowl Winners vs. Non-Winners",
-       x = "Year", y = "Average Points") +
+       x = "Year",
+       y = "Average Points") +
   theme_minimal() +
   theme(legend.title = element_blank())
 
-# Example with avg_yards
-ggplot(yearly_stats, aes(x = Year, y = avg_yards, color = SuperBowl_Winner)) +
+
+yearly_stats <- cleaned_data %>%
+  group_by(Year, SuperBowl_Winner) %>%
+  summarise(avg_yards = mean(Yards, na.rm = TRUE), .groups = "drop")
+
+ggplot(yearly_stats, aes(x = Year, y = avg_yards, color = factor(SuperBowl_Winner))) +
   geom_line(size = 1.2) +
   geom_point() +
-  scale_color_manual(values = c("FALSE" = "grey70", "TRUE" = "darkgoldenrod2")) +
+  scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"),
+                     labels = c("Non-Winners", "Winners")) +
   scale_x_continuous(breaks = yearly_stats$Year) +
   labs(title = "Average Yards Over Time",
        subtitle = "Super Bowl Winners vs. Non-Winners",
-       x = "Year", y = "Average Yards") +
+       x = "Year",
+       y = "Average Yards") +
   theme_minimal() +
   theme(legend.title = element_blank())
 
 
-# Trends in Winners Only
+
 winners_over_time <- cleaned_data %>%
-  filter(SuperBowl_Winner == TRUE) %>%
+  filter(SuperBowl_Winner == 1) %>%
   group_by(Year) %>%
   summarise(
     median_points = median(Points_Scored, na.rm = TRUE),
@@ -150,7 +178,8 @@ winners_over_time <- cleaned_data %>%
 
 winners_long <- winners_over_time %>%
   pivot_longer(cols = c("median_points", "median_yards", "median_turnovers", "median_pass_tds"), 
-               names_to = "Statistic", values_to = "Value") %>%
+               names_to = "Statistic",
+               values_to = "Value") %>%
   mutate(Statistic = recode(Statistic, 
                             "median_points" = "Points",
                             "median_yards" = "Yards",
@@ -163,11 +192,12 @@ ggplot(winners_long, aes(x = Year, y = Value)) +
   facet_wrap(~Statistic, scales = "free_y") +
   scale_x_continuous(breaks = winners_long$Year) +
   labs(title = "Key Performance Metrics for Super Bowl Winners Over Time",
-       x = "Year", y = "Value") +
+       x = "Year", 
+       y = "Value") +
   theme_minimal()
 
-# Correlation Analysis
-# Convert SuperBowl_Winner to numeric for correlation
+
+# Convert SuperBowl_Winner to numeric if not already done
 cleaned_data <- cleaned_data %>%
   mutate(SuperBowl_Winner = as.numeric(SuperBowl_Winner))
 
@@ -188,10 +218,52 @@ ggplot(melted_corr, aes(Var1, Var2, fill = value)) +
         axis.title.y = element_blank()) +
   labs(title = "Correlation Heatmap Including SuperBowl_Winner")
 
-# Focus on correlations involving SuperBowl_Winner
-sbw_correlations <- melted_corr %>%
-  filter(Var1 == "SuperBowl_Winner" | Var2 == "SuperBowl_Winner") %>%
-  filter(Var1 != Var2) %>%
-  arrange(desc(abs(value)))
 
-View(sbw_correlations)
+correlationMat <- cor(cleaned_data[, sapply(cleaned_data, is.numeric)], use = "complete.obs")
+correlation_with_SB_Winner <- correlationMat["SuperBowl_Winner", ]
+correlation_with_SB_Winner <- sort(correlation_with_SB_Winner, decreasing = TRUE)
+print(correlation_with_SB_Winner)
+
+# Filter data for the 2024 season
+teams_2024 <- cleaned_data %>%
+  filter(Year == 2024) %>%
+  group_by(Team) %>%
+  summarise(
+    Avg_Yards = mean(Yards, na.rm = TRUE),
+    Avg_Points = mean(Points_Scored, na.rm = TRUE)
+  )
+
+# Create scatter plot with unique colors for each team
+# Create bar chart
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Yards), y = Avg_Yards, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() + # Optional: Use a visually appealing color palette
+  labs(
+    title = "Average Yards for NFL Teams (2024)",
+    x = "Team",
+    y = "Average Yards"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10), # Rotate team names for readability
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+
+# Create horizontal bar chart 
+ggplot(teams_2024, aes(x = reorder(Team, Avg_Points), y = Avg_Points, fill = Team)) +
+  geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Average Points for NFL Teams (2024)",
+    x = "Average Points",
+    y = "Team"
+  ) +
+  theme_minimal() +
+  coord_flip() + # Flips the axes
+  theme(
+    axis.text.y = element_text(size = 10, margin = margin(r = 10), lineheight = 1.2), # Adjust text size, margin, and spacing
+    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
