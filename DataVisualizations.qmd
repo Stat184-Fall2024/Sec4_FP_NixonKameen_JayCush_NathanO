@@ -24,6 +24,7 @@ You can add options to executable code like this
 
 The `echo: false` option disables the printing of code (only output is displayed).
 
+
 ```{r}
 # Load Required Libraries
 library(dplyr)
@@ -49,6 +50,7 @@ links <- list(
   "2024" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2024%20NFL%20season.xltx"
 )
 
+# Read all data and combine
 all_data <- lapply(names(links), function(year) {
   temp_file <- tempfile(fileext = ".xlsx")
   download.file(links[[year]], temp_file, mode = "wb")
@@ -68,6 +70,7 @@ standard_columns <- c(
   "Expected_Points_Contributed", "Year"
 )
 
+# Rename columns to standard
 colnames(all_data) <- standard_columns[1:ncol(all_data)]
 
 # Data Cleaning
@@ -77,27 +80,35 @@ cleaned_data <- all_data %>%
   mutate(across(!c("Team"), as.numeric)) %>%
   mutate(
     SuperBowl_Winner = case_when(
-      (Team == "Kansas City Chiefs" & Year == 2024) ~ TRUE,
-      (Team == "Kansas City Chiefs" & Year == 2023) ~ TRUE,
-      (Team == "Los Angeles Rams" & Year == 2022) ~ TRUE,
-      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ TRUE,
-      (Team == "Kansas City Chiefs" & Year == 2020) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2019) ~ TRUE,
-      (Team == "Philadelphia Eagles" & Year == 2018) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2017) ~ TRUE,
-      (Team == "Denver Broncos" & Year == 2016) ~ TRUE,
-      (Team == "New England Patriots" & Year == 2015) ~ TRUE,
-      TRUE ~ FALSE
+      (Team == "Kansas City Chiefs" & Year == 2024) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2023) ~ 1,
+      (Team == "Los Angeles Rams" & Year == 2022) ~ 1,
+      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2020) ~ 1,
+      (Team == "New England Patriots" & Year == 2019) ~ 1,
+      (Team == "Philadelphia Eagles" & Year == 2018) ~ 1,
+      (Team == "New England Patriots" & Year == 2017) ~ 1,
+      (Team == "Denver Broncos" & Year == 2016) ~ 1,
+      (Team == "New England Patriots" & Year == 2015) ~ 1,
+      TRUE ~ 0
     )
   )
-
-# Ranking Within Each Year (Optional)
+ 
+# Ranking Within Each Year
 ranked_data <- cleaned_data %>%
   group_by(Year) %>%
-  mutate(across(where(is.numeric), ~ rank(-., ties.method = "min"))) %>%
+  mutate(across(
+    where(is.numeric) & !c(SuperBowl_Winner), # Exclude SuperBowl_Winner
+    ~ rank(-., ties.method = "min")
+  )) %>%
   ungroup() %>%
-  select(-Games, -Rank)
+  select(-Games, -Rank) 
+
+# Output the final dataset to check the structure
+head(ranked_data)
+
 ```
+ 
 
 This code loads the necessary data
 
@@ -119,7 +130,31 @@ The summary statistics provide a broad overview of all the numeric variables in 
 ### Distribution of Points Scored
 
 ```{r}
-ggplot(cleaned_data, aes(x = Points_Scored, fill = factor(SuperBowl_Winner))) + geom_histogram(position = "identity", alpha = 0.6, bins = 30) + scale_fill_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), labels = c("Non-Winner", "Winner")) + labs(title = "Distribution of Points Scored", subtitle = "Super Bowl Winners vs. Non-Winners", x = "Points Scored", y = "Count") + theme_minimal()
+
+# Create a column to indicate if a team has ever won a Super Bowl
+aggregated_data <- cleaned_data %>%
+  group_by(Team) %>%
+  summarise(
+    Total_Points_Scored = sum(Points_Scored, na.rm = TRUE),
+    Ever_SuperBowl_Winner = ifelse(any(SuperBowl_Winner == "1"), "Winner", "Non-Winner"),
+    .groups = "drop"
+  )
+
+# Plot with the updated column
+ggplot(aggregated_data, aes(x = reorder(Team, Total_Points_Scored), y = Total_Points_Scored, fill = Ever_SuperBowl_Winner)) +
+  geom_bar(stat = "identity", alpha = 0.8) +
+  scale_fill_manual(
+    values = c("Non-Winner" = "grey70", "Winner" = "darkgoldenrod2")
+  ) +
+  labs(
+    title = "Total Points Scored by Team",
+    subtitle = "Super Bowl Winners vs. Non-Winners",
+    x = "Team",
+    y = "Total Points Scored",
+    fill = "Super Bowl Status"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 **Explanation:**\
@@ -130,11 +165,18 @@ This histogram compares the distribution of total points scored by teams that wo
 ```{r}
 ggplot(cleaned_data, aes(x = factor(SuperBowl_Winner), y = Yards, fill = factor(SuperBowl_Winner))) +
   geom_boxplot(alpha = 0.7) +
-  scale_fill_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), 
-                    labels = c("Non-Winner", "Winner")) +
-  labs(title = "Distribution of Total Yards",
-       x = "",
-       y = "Yards") +
+  scale_fill_manual(
+    values = c("0" = "grey70", "1" = "darkgoldenrod2"),
+    labels = c("Non-Winner", "Winner")
+  ) +
+  scale_x_discrete(
+    labels = c("0" = "Non-Winner", "1" = "Winner")
+  ) +
+  labs(
+    title = "Distribution of Total Yards",
+    x = "",
+    y = "Yards"
+  ) +
   theme_minimal() +
   theme(legend.position = "none")
 
