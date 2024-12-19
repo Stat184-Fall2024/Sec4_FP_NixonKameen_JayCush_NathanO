@@ -233,7 +233,7 @@ yearly_stats <- cleaned_data %>%
   summarise(avg_points = mean(Points_Scored, na.rm = TRUE), .groups = "drop")
 
 ggplot(yearly_stats, aes(x = Year, y = avg_points, color = factor(SuperBowl_Winner))) +
-  geom_line(size = 1.2) +
+  geom_line(linewidth = 1.2) +
   geom_point() +
   scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"), 
                      labels = c("Non-Winners", "Winners")) +
@@ -274,7 +274,7 @@ winners_long <- winners_over_time %>%
                             "median_pass_tds" = "Pass Touchdowns"))
 
 ggplot(winners_long, aes(x = Year, y = Value)) +
-  geom_line(color = "darkgoldenrod2", size = 1.2) +
+  geom_line(color = "darkgoldenrod2", linewidth = 1.2) +
   geom_point(color = "darkgoldenrod2") +
   facet_wrap(~Statistic, scales = "free_y") +
   scale_x_continuous(breaks = seq(min(winners_long$Year), max(winners_long$Year), by = 2)) +
