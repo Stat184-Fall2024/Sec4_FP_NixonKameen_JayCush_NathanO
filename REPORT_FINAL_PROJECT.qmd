@@ -49,10 +49,6 @@ editor: visual
     -   We then isolate the Super Bowl Winners in their key performance metrics over time. (Points, yards, turnovers, and passing touchdowns) sees if there's a dominant trend that emerges
 6.  Bring in data visualizations:
 
-![](images/clipboard-3347954983.png){width="772" height="202"}
-
-1.  The report should be a narrative text (explains context and helps the reader on what's going on)
-
 # [The Qualities of a Super Bowl-Winning Team]{.underline}
 
 ### Nixon Kameen, Jay Cush, Nathan O
@@ -69,8 +65,54 @@ On the more conventional side, sports analysts depend on traditional data and ex
 
 ## [Methodology]{.underline}
 
-We had two different tasks to accomplish: 1.) Finding the trends between the Super Bowl-winning teams' offense and 2.) Comparing those trends with the teams in the current NFL season to predict who will win it. For this experiment, Nixon was able to gather the offensive statistics of every team from each season from 2015-2023, respectfully, from "pro-football-reference.com". It's good to keep in mind that all of these data sets have the same named variables. But if we want to see which teams performed better in each individual statistic, we also need to find the correlation between winning the Super Bowl and each variable. Basically, we need to know if have more or less of the variable is a good statistic for winning.
+We had two different tasks to accomplish: 1.) Finding the trends between the Super Bowl-winning teams' offense and 2.) Comparing those trends with the teams in the current NFL season to predict who will win it. For this experiment, Nixon was able to gather the offensive statistics of every team from each season from 2015-2023, respectfully, from "pro-football-reference.com". It's good to keep in mind that all of these data sets have the same named variables, but if we want to see which teams performed better in each individual statistic, we also need to find the correlation between winning the Super Bowl and each variable. Basically, we need to know if have more or less of the variable is a good statistic for winning.
 
 After finding the correlation of each variable and winning the Super Bowl, we made a new data set that converted all the numeric values into rankings between each team for every variable in the season, and then combined all the seasons together to find different trends in the teams.
 
-Next, we went through different offensive categories and found the average
+Next, we went through different offensive categories and found the different distributions between the winning and losing teams in said variables, creating different graphs to signify throughout the years how each winning team performed in that category compared to their competition. This helped us find the typical trends each Super Bowl team in the past 8 years tended to follow, and could help us with our predictions.
+
+Finally, to make our predictions for the current NFL season, we grabbed the data of every team this season still eligible for making the playoffs and compared their different standings to the ones that were apparent with the previous Super Bowl winners. From our estimations thereafter, we can predict who will win the Super Bowl this season.
+
+It is also good to keep in mind that the data is supported by the FAIR principles. All of the data is easily findable and accessible through the repository, it was interoperable with the combining of multiple data sets, and can be reused for future projects, if needed.
+
+## [Data Exploration:]{.underline}
+
+First, we wanted to see a broad overview of all the numeric values in the set, so we made a graph summarizing all of the data from the 2015-2023 seasons. This included the mean values and quartile split for different variables including Points_Scored, Yards, and Turnovers, which helped us understand the range, mean, and variability of key metrics.
+
+![](images/clipboard-59017638.png)
+
+As seen by the first graph, one of the most important factors to consider from now onward is the amount of games played. From transitioning from the 2020 to the 2021 season, the amount of weeks in the traditional season increased, meaning that team statistics (such as passing and rushing yards, turnovers, etc.) could increase, allowing for more variability to happen throughout the graphs. We also do have to consider that during the 2020-21 season, multiple teams had to shorten their seasons due to the spreading of COVID-19, meaning that some of the dips in the data below could have also resulted from that.
+
+As mentioned above, we wanted to find the different correlations between each offensive variable and winning the Super Bowl. This helps readers get insight on the world of the NFL, by seeing how different variables affect teams and what they need to do to win the big game. In the graph below, and as seen by the key, having a red value represented a positive correlation between the two selected variables, and blue representing a negative one. The shading on the correlations also called for the strengths of each variable on each other, but more importantly, to winning the Super Bowl.
+
+![](images/clipboard-44681875.png)
+
+Since there are multiple variables that are needed to be considered in determining what a team needs to win a Super Bowl, it makes sense that there aren't any noticeably strong correlations between the variables and winning the big game. But we wanted to go more in depth on the concept of the strength of the variables on winning the big game, so we also gathered the absolute values of the correlation coefficient values and found which values were the most impactful. Below shows our findings:
+
+![](images/clipboard-407621615.png){width="732"}
+
+It was shown that First_Down_Passing, Pass_Completion, Pass_Attempts, Pass_Yards, and %\_Drives_Ending_in_Score were the most impactful to winning, indicating that having more of a passing-based offense is more likely to win the Super Bowl than one focused around running the football.
+
+However, something we noticed was that all of these coefficients were similarly weak in strength. The strongest coefficient value rounded to about 0.154, so even though all of the stronger variables were surrounding the pass game, the graph indicated that just having the best pass game wouldn't garuntee a Super Bowl ring. So that means that the rush game is still important to consider what makes a Super Bowl-winning team.
+
+Still, to follow with our data, we decided to choose Total Yards, Average Points Scored Over Time, and Average Yards Over Time to see any trends:
+
+![](images/clipboard-721659967.png)
+
+![](images/clipboard-1929997282.png)
+
+As seen above from both graphs, it's noticeable that the winning teams tend to have a higher average of yards (passing and rushing combined) when being compared to the other teams in the league. We decided to compare the average of all the teams that lost each season in the second graph with each winner since it would be more readable. It also indicated that higher yards compared the the rest of the league meant a better chance of winning the Super Bowl. We do however see some outliers from the trend, noticeably in 2022 (LA Rams) and 2016 (Denver Broncos). Both teams throughout their respected seasons didn't perform at the top, but still made an amazing push throughout the playoffs, resulting in them lifting the trophy. These outliers also help indicate that although these trends are beneficial to look at, the winning team doesn't always has to follow them.
+
+We then wanted to look at the total points scored over time between the winning team and the average of the remaining 31 teams to see a trend through that. Our graph below shows more insight:
+
+![As you can see, both 2022 and 2016 are outliers again, proving that the winning team doesn't always has to over-perform above the average. Yet, it is still apparent that it is an indicator that most Super Bowl winners do outshine their competition immensely in scoring points. ](images/clipboard-1551138974.png)
+
+Before taking a look at the 2024 data and making our prediction, we also wanted to see the direction of different categories over time for all the Super Bowl winners. This included Passing Touchdowns, Points, Turnovers, and Yards.
+
+![](images/clipboard-3947988343.png)
+
+From these four graphs, we were able to find a lot of inconsistency between each winner, which resulted in no definite trends to exist. This can also be supported by the correlation coefficients above, which indicated weak correlations between these variables and winning the Super Bowl.
+
+From our findings so far, we were able to discover that the winning team most likely had to have above 5500 total yards of offense and above 350 total points on the year. We also have to reiterate that these trends aren't 100% with all the Super Bowl winners; there are always outliers.
+
+## [Discussion]{.underline}
