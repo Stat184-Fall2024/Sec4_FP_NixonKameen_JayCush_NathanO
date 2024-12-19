@@ -33,9 +33,94 @@ It is also good to keep in mind that the data is supported by the FAIR principle
 
 ## [Data Exploration:]{.underline}
 
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+# Load Required Libraries
+library(dplyr)
+library(readxl)
+library(esquisse)
+library(ggplot2)
+library(tidyr)
+library(scales)
+library(reshape2)
+library(corrplot)
+
+# Data Download and Preparation
+links <- list(
+  "2015" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2015%20NFL%20season.xltx",
+  "2016" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2016%20NFL%20season.xltx",
+  "2017" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2017%20NFL%20season.xltx",
+  "2018" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2018%20NFL%20season.xltx",
+  "2019" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2019%20NFL%20season.xltx",
+  "2020" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2020%20NFL%20season.xltx",
+  "2021" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2021%20NFL%20season.xltx",
+  "2022" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2022%20NFL%20season.xltx",
+  "2023" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2023%20NFL%20season.xltx",
+  "2024" = "https://raw.githubusercontent.com/Stat184-Fall2024/Sec4_FP_NixonKameen_JayCush_NathanO/main/2024%20NFL%20season.xltx"
+)
+
+# Read all data and combine
+all_data <- lapply(names(links), function(year) {
+  temp_file <- tempfile(fileext = ".xlsx")
+  download.file(links[[year]], temp_file, mode = "wb")
+  read_excel(temp_file) %>%
+    mutate(Year = as.integer(year))
+}) %>%
+  bind_rows()
+
+# Define standard column names
+standard_columns <- c(
+  "Rank", "Team", "Games", "Points_Scored", "Yards", "Plays", "Yards_Per_Play",
+  "Turnovers", "Fumbles_Lost", "First_Downs", "Pass_Completions", "Pass_Attempts",
+  "Pass_Yards", "Pass_Touchdowns", "Pass_Interceptions", "Net_Yards_Per_Pass_Attempt",
+  "First_Downs_Passing", "Rush_Attempts", "Rush_Yards", "Rush_Touchdowns",
+  "Rush_Yards_Per_Attempt", "First_Downs_Rushing", "Penalties", "Penalties_In_Yards",
+  "First_Downs_By_Penalty", "%_Drives_Ending_In_Score", "%_Drives_Ending_In_Turnover",
+  "Expected_Points_Contributed", "Year"
+)
+
+# Rename columns to standard
+colnames(all_data) <- standard_columns[1:ncol(all_data)]
+
+# Data Cleaning
+cleaned_data <- all_data %>%
+  filter(!is.na(Rank)) %>%
+  filter(!grepl("Avg|League|Total|Tm", Team)) %>%
+  mutate(across(!c("Team"), as.numeric)) %>%
+  mutate(
+    SuperBowl_Winner = case_when(
+      (Team == "Kansas City Chiefs" & Year == 2024) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2023) ~ 1,
+      (Team == "Los Angeles Rams" & Year == 2022) ~ 1,
+      (Team == "Tampa Bay Buccaneers" & Year == 2021) ~ 1,
+      (Team == "Kansas City Chiefs" & Year == 2020) ~ 1,
+      (Team == "New England Patriots" & Year == 2019) ~ 1,
+      (Team == "Philadelphia Eagles" & Year == 2018) ~ 1,
+      (Team == "New England Patriots" & Year == 2017) ~ 1,
+      (Team == "Denver Broncos" & Year == 2016) ~ 1,
+      (Team == "New England Patriots" & Year == 2015) ~ 1,
+      TRUE ~ 0
+    )
+  )
+ 
+# Ranking Within Each Year
+ranked_data <- cleaned_data %>%
+  group_by(Year) %>%
+  mutate(across(
+    where(is.numeric) & !c(SuperBowl_Winner), # Exclude SuperBowl_Winner
+    ~ rank(-., ties.method = "min")
+  )) %>%
+  ungroup() %>%
+  select(-Games, -Rank) 
+
+```
+
 First, we wanted to see a broad overview of all the numeric values in the set, so we made a graph summarizing all of the data from the 2015-2023 seasons. This included the mean values and quartile split for different variables including Points_Scored, Yards, and Turnovers, which helped us understand the range, mean, and variability of key metrics.
 
 ```{r}
+#| include: false
 overall_summary <- cleaned_data %>%
   select(where(is.numeric)) %>%
   summary()
@@ -48,39 +133,45 @@ As seen by the first graph, one of the most important factors to consider from n
 As mentioned above, we wanted to find the different correlations between each offensive variable and winning the Super Bowl. This helps readers get insight on the world of the NFL, by seeing how different variables affect teams and what they need to do to win the big game. In the graph below, and as seen by the key, having a red value represented a positive correlation between the two selected variables, and blue representing a negative one. The shading on the correlations also called for the strengths of each variable on each other, but more importantly, to winning the Super Bowl.
 
 ```{r}
-# Convert SuperBowl_Winner to numeric if not already done
+#| echo: false
 cleaned_data <- cleaned_data %>%
   mutate(SuperBowl_Winner = as.numeric(SuperBowl_Winner))
 
+# Select only numeric columns
 numeric_data <- cleaned_data %>%
   select(where(is.numeric))
 
+# Compute the correlation matrix
 corr_matrix <- cor(numeric_data, use = "complete.obs", method = "pearson")
 
-# Correlation Heatmap
-melted_corr <- melt(corr_matrix)
+# Melt the correlation matrix for ggplot
+melted_corr <- reshape2::melt(corr_matrix)
+
+# Correlation Heatmap with improved label spacing
 ggplot(melted_corr, aes(Var1, Var2, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, 
                        name = "Correlation") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 5), # Adjust x-axis labels
+    axis.text.y = element_text(size = 5), # Adjust y-axis labels
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5) # Center and style title
+  ) +
   labs(title = "Correlation Heatmap Including SuperBowl_Winner")
 ```
 
 Since there are multiple variables that are needed to be considered in determining what a team needs to win a Super Bowl, it makes sense that there aren't any noticeably strong correlations between the variables and winning the big game. But we wanted to go more in depth on the concept of the strength of the variables on winning the big game, so we also gathered the absolute values of the correlation coefficient values and found which values were the most impactful. Below shows our findings:
 
 ```{r}
-melted_corr <- melt(corr_matrix)
+#| echo: false
+correlationMat <- cor(cleaned_data[, sapply(cleaned_data, is.numeric)], use = "complete.obs")
+correlation_with_SB_Winner <- correlationMat["SuperBowl_Winner", ]
+correlation_with_SB_Winner <- sort(correlation_with_SB_Winner, decreasing = TRUE)
+print(correlation_with_SB_Winner)
 
-sbw_correlations <- melted_corr %>%
-  filter(Var1 == "SuperBowl_Winner" | Var2 == "SuperBowl_Winner") %>%
-  filter(Var1 != Var2) %>%
-  arrange(desc(abs(value)))
-
-head(sbw_correlations, 10)
 ```
 
 It was shown that First_Down_Passing, Pass_Completion, Pass_Attempts, Pass_Yards, and %\_Drives_Ending_in_Score were the most impactful to winning, indicating that having more of a passing-based offense is more likely to win the Super Bowl than one focused around running the football.
@@ -90,6 +181,8 @@ However, something we noticed was that all of these coefficients were similarly 
 Still, to follow with our data, we decided to choose Total Yards, Average Points Scored Over Time, and Average Yards Over Time to see any trends:
 
 ```{r}
+#| echo: false
+
 ggplot(cleaned_data, aes(x = factor(SuperBowl_Winner), y = Yards, fill = factor(SuperBowl_Winner))) +
   geom_boxplot(alpha = 0.7) +
   scale_fill_manual(
@@ -109,12 +202,13 @@ ggplot(cleaned_data, aes(x = factor(SuperBowl_Winner), y = Yards, fill = factor(
 ```
 
 ```{r}
+#| echo: false
 yearly_stats <- cleaned_data %>%
   group_by(Year, SuperBowl_Winner) %>%
   summarise(avg_yards = mean(Yards, na.rm = TRUE), .groups = "drop")
 
 ggplot(yearly_stats, aes(x = Year, y = avg_yards, color = factor(SuperBowl_Winner))) +
-  geom_line(size = 1.2) +
+  geom_line(linewidth = 1.2) + # Use `linewidth` instead of `size`
   geom_point() +
   scale_color_manual(values = c("0" = "grey70", "1" = "darkgoldenrod2"),
                      labels = c("Non-Winners", "Winners")) +
@@ -125,6 +219,7 @@ ggplot(yearly_stats, aes(x = Year, y = avg_yards, color = factor(SuperBowl_Winne
        y = "Average Yards") +
   theme_minimal() +
   theme(legend.title = element_blank())
+
 ```
 
 As seen above from both graphs, it's noticeable that the winning teams tend to have a higher average of yards (passing and rushing combined) when being compared to the other teams in the league. We decided to compare the average of all the teams that lost each season in the second graph with each winner since it would be more readable. It also indicated that higher yards compared the the rest of the league meant a better chance of winning the Super Bowl. We do however see some outliers from the trend, noticeably in 2022 (LA Rams) and 2016 (Denver Broncos). Both teams throughout their respected seasons didn't perform at the top, but still made an amazing push throughout the playoffs, resulting in them lifting the trophy. These outliers also help indicate that although these trends are beneficial to look at, the winning team doesn't always has to follow them.
@@ -132,6 +227,7 @@ As seen above from both graphs, it's noticeable that the winning teams tend to h
 We then wanted to look at the total points scored over time between the winning team and the average of the remaining 31 teams to see a trend through that. Our graph below shows more insight:
 
 ```{r}
+#| echo: false
 yearly_stats <- cleaned_data %>%
   group_by(Year, SuperBowl_Winner) %>%
   summarise(avg_points = mean(Points_Scored, na.rm = TRUE), .groups = "drop")
@@ -155,6 +251,7 @@ As you can see, both 2022 and 2016 are outliers again, proving that the winning 
 Before taking a look at the 2024 data and making our prediction, we also wanted to see the direction of different categories over time for all the Super Bowl winners. This included Passing Touchdowns, Points, Turnovers, and Yards.
 
 ```{r}
+#| echo: false
 winners_over_time <- cleaned_data %>%
   filter(SuperBowl_Winner == 1) %>%
   group_by(Year) %>%
@@ -180,7 +277,7 @@ ggplot(winners_long, aes(x = Year, y = Value)) +
   geom_line(color = "darkgoldenrod2", size = 1.2) +
   geom_point(color = "darkgoldenrod2") +
   facet_wrap(~Statistic, scales = "free_y") +
-  scale_x_continuous(breaks = winners_long$Year) +
+  scale_x_continuous(breaks = seq(min(winners_long$Year), max(winners_long$Year), by = 2)) +
   labs(title = "Key Performance Metrics for Super Bowl Winners Over Time",
        x = "Year", 
        y = "Value") +
@@ -195,6 +292,7 @@ From our findings so far, we were able to discover that the winning team most li
 As the 2024 NFL regular season nears its conclusion, the playoff picture is coming into focus, showing intense debates about potential Super Bowl contenders. We will quickly dive into the standout performances of the season.
 
 ```{r}
+#| echo: false
 # Filter data for the 2024 season
 teams_2024 <- cleaned_data %>%
   filter(Year == 2024) %>%
@@ -216,26 +314,29 @@ ggplot(teams_2024, aes(x = reorder(Team, Avg_Yards), y = Avg_Yards, fill = Team)
   ) +
   theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 10), # Rotate team names for readability
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 6), # Rotate team names for readability
     axis.title.x = element_text(size = 12, face = "bold"),
     axis.title.y = element_text(size = 12, face = "bold")
   )
 
-# Create horizontal bar chart 
+teams_2024$Team <- stringr::str_wrap(teams_2024$Team, width = 35)
+
+# Create horizontal bar chart with improved spacing
 ggplot(teams_2024, aes(x = reorder(Team, Avg_Points), y = Avg_Points, fill = Team)) +
   geom_bar(stat = "identity", alpha = 0.8, show.legend = FALSE) +
   scale_fill_viridis_d() +
   labs(
     title = "Average Points for NFL Teams (2024)",
-    x = "Average Points",
-    y = "Team"
+    x = "Team",
+    y = "Average Points"
   ) +
   theme_minimal() +
-  coord_flip() + # Flips the axes
+  coord_flip() + # Flips the axes for horizontal bars
   theme(
-    axis.text.y = element_text(size = 10, margin = margin(r = 10), lineheight = 1.2), # Adjust text size, margin, and spacing
+    axis.text.y = element_text(size = 6, margin = margin(r = 5), lineheight = 3), # Adjust line height and size
     axis.title.x = element_text(size = 12, face = "bold"),
-    axis.title.y = element_text(size = 12, face = "bold")
+    axis.title.y = element_text(size = 12, face = "bold"),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5) # Center the title
   )
 
 ```
@@ -272,7 +373,7 @@ Pro Football Reference. “2015 NFL Standings & Team Stats \| Pro-Football-Refer
 
 # [Code Appendix]{.underline}
 
-``` R
+``` r
 # Load Required Libraries
 library(dplyr)
 library(readxl)
